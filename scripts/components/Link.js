@@ -1,31 +1,43 @@
-import React, {Component, PropTypes} from 'react';
-import {navigateTo} from '../actions/navigator';
+import React, { Component, PropTypes } from 'react';
+import { navigateTo } from '../actions/NavigatorActions';
+import { constructUrl } from '../utils/RouteUtils';
+
+const propTypes = {
+  children: PropTypes.node,
+  className: PropTypes.string,
+  dispatch: PropTypes.func.isRequired,
+  route: PropTypes.object.isRequired,
+  title: PropTypes.string,
+};
 
 class Link extends Component {
-    constructor(props) {
-        super(props);
-        this.handleClick = this.handleClick.bind(this);
-    }
+  constructor(props) {
+    super(props);
+    this.handleClick = this.handleClick.bind(this);
+  }
 
-    handleClick(e) {
-        e.preventDefault();
-        const {dispatch, path} = this.props;
-        dispatch(navigateTo(path));
-    }
+  handleClick(e) {
+    e.preventDefault();
+    const { dispatch, route } = this.props;
+    dispatch(navigateTo(route));
+  }
 
-    render() {
-        const {children, className} = this.props;
+  render() {
+    const { children, className, route, title } = this.props;
 
-        return (
-            <a className={className} onClick={this.handleClick}>{children}</a>
-        );
-    }
+    return (
+      <a
+        className={className}
+        href={`/#/${constructUrl(route)}`}
+        onClick={this.handleClick}
+        title={title ? String(title) : ''}
+      >
+        {children}
+      </a>
+    );
+  }
 }
 
-Link.propTypes = {
-    className: PropTypes.string,
-    dispatch: PropTypes.func.isRequired,
-    path: PropTypes.array.isRequired
-};
+Link.propTypes = propTypes;
 
 export default Link;

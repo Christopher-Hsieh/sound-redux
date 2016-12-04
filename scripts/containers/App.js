@@ -1,127 +1,91 @@
-import React, {Component, PropTypes} from 'react';
-import {connect} from 'react-redux';
+import React, { Component, PropTypes } from 'react';
+import { connect } from 'react-redux';
 
-import {changeHeight} from '../actions/height';
-import {navigateBack, navigateTo} from '../actions/navigator';
-import {changeActivePlaylist, fetchSongsIfNeeded} from '../actions/playlists';
+import { initAuth } from '../actions/AuthedActions';
+import { initEnvironment } from '../actions/EnvironmentActions';
+import { initNavigator } from '../actions/NavigatorActions';
 
-import Header from '../components/Header';
-import Player from '../components/Player';
-import Song from '../components/Song';
-import Songs from '../components/Songs';
-import User from '../components/User';
+import NavContainer from '../containers/NavContainer';
+import MeContainer from '../containers/MeContainer';
+import ModalContainer from '../containers/ModalContainer';
+import PlayerContainer from '../containers/PlayerContainer';
+import SongContainer from '../containers/SongContainer';
+import SongsContainer from '../containers/SongsContainer';
+import UserContainer from '../containers/UserContainer';
 
-function initHeight(dispatch) {
-    dispatch(changeHeight(window.innerHeight));
-    window.onresize = () => {
-        dispatch(changeHeight(window.innerHeight));
-    }
-}
-
-function initNavigator(dispatch) {
-    window.onpopstate = e => {
-        dispatch(navigateBack(e));
-    };
-    const path = window.location.hash === '' ? ['songs'] : window.location.hash.replace('#/', '').split('/');
-    dispatch(navigateTo(path));
-}
-
-class App extends Component {
-    componentDidMount () {
-        const {dispatch} = this.props;
-        initHeight(dispatch);
-        initNavigator(dispatch);
-        dispatch(changeActivePlaylist('house'));
-    }
-
-    renderContent() {
-        const {activePlaylist, dispatch, height, navigator, player, playingSong, playlists, song, user} = this.props;
-        const {path} = navigator;
-        if (path[0] === 'songs' && path.length === 1) {
-            return (
-                <Songs
-                    {...this.props}
-                    scrollFunc={fetchSongsIfNeeded.bind(null, activePlaylist)} />
-            );
-        } else if (path[0] === 'songs' && path.length === 2) {
-            return (
-                <Song
-                    dispatch={dispatch}
-                    height={height}
-                    player={player}
-                    playingSong={playingSong}
-                    song={song}
-                    songs={song.title && song.title in playlists ? playlists[song.title] : {}} />
-            );
-        } else if (path[0] === 'users' && path.length === 2) {
-            return (
-                <User
-                    dispatch={dispatch}
-                    height={height}
-                    player={player}
-                    playingSong={playingSong}
-                    songs={user.username && user.username in playlists ? playlists[user.username] : {}}
-                    user={user} />
-            );
-        }
-    }
-
-    renderPlayer() {
-        const {dispatch, player, playlists} = this.props;
-        const {currentSongIndex, selectedPlaylists} = player;
-        const currentPlaylist = selectedPlaylists[selectedPlaylists.length - 1];
-        if (currentSongIndex === null) {
-            return;
-        }
-
-        return (
-            <Player
-                dispatch={dispatch}
-                player={player}
-                playlists={playlists}
-                song={playlists[currentPlaylist].items[currentSongIndex]} />
-        );
-    }
-
-    render() {
-        const {dispatch} = this.props;
-
-        return (
-            <div>
-                <Header dispatch={dispatch} />
-                {this.renderContent()}
-                {this.renderPlayer()}
-            </div>
-        );
-    }
-}
-
-App.propTypes = {
-    activePlaylist: PropTypes.string,
-    dispatch: PropTypes.func.isRequired,
-    navigator: PropTypes.object.isRequired,
-    player: PropTypes.object.isRequired,
-    playingSong: PropTypes.object,
-    playlists: PropTypes.object.isRequired,
-    song: PropTypes.object.isRequired
+const propTypes = {
+  dispatch: PropTypes.func.isRequired,
+  height: PropTypes.number,
+  isMobile: PropTypes.bool,
+  path: PropTypes.array.isRequired,
+  width: PropTypes.number,
 };
 
-function mapStateToProps(state) {
-    const {activePlaylist, activeSongId, activeUserId, height, navigator, player, playlists, songs, users} = state;
-    const song = activeSongId && activeSongId in songs ? songs[activeSongId] : {};
-    const user = activeUserId && activeUserId in users ? users[activeUserId] : {};
-    const playingSong = player.currentSongIndex !== null ? playlists[player.selectedPlaylists[player.selectedPlaylists.length - 1]].items[player.currentSongIndex] : {};
+class App extends Component {
+  componentDidMount() {
+    const { dispatch } = this.props;
+    dispatch(initEnvironment());
+    dispatch(initAuth());
+    dispatch(initNavigator());
+  }
 
-    return {
-        activePlaylist,
-        height,
-        navigator,
-        player,
-        playingSong,
-        playlists,
-        song,
-        user
-    };
+  renderContent() {
+    const { path } = this.props;
+    switch (path[0]) {
+      case 'songs':
+        switch (path.length) {
+          case 1:
+            return <SongsContainer />;
+          case 2:
+            return <SongContainer />;
+          default:
+            return null;
+        }
+      case 'users':
+        return <UserContainer />;
+      case 'me':
+        return <MeContainer />;
+      default:
+        return null;
+    }
+  }
+
+  render() {
+    const { height, isMobile, width } = this.props;
+    if (isMobile) {
+      return (
+        <div className="mobile" style={{ height: `${height}px`, width: `${width}px` }}>
+          <PlayerContainer />
+          {this.renderContent()}
+          <NavContainer />
+        </div>
+      );
+    }
+
+    return (
+      <div>
+        <NavContainer />
+        {this.renderContent()}
+        <PlayerContainer />
+        <ModalContainer />
+      </div>
+    );
+  }
+}
+
+App.propTypes = propTypes;
+
+function mapStateToProps(state) {
+  const { environment, navigator } = state;
+  const { height, isMobile, width } = environment;
+  const { path } = navigator.route;
+
+  return {
+    height,
+    isMobile,
+    path,
+    width,
+  };
 }
 
 
