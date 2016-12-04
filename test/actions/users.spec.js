@@ -2,8 +2,8 @@ import expect from 'expect';
 import nock from 'nock';
 import fetch from 'isomorphic-fetch';
 import {arrayOf, normalize} from 'normalizr';
-import merge from 'lodash/object/merge';
-import * as actions from '../../scripts/actions/users';
+import merge from 'lodash/merge';
+import * as actions from '../../scripts/actions/UsersActions';
 import * as types from '../../scripts/constants/ActionTypes';
 import {CLIENT_ID} from '../../scripts/constants/Config';
 import {songSchema, userSchema} from '../../scripts/constants/Schemas';
@@ -20,15 +20,6 @@ describe('users actions', () => {
             const store = mockStore({entities: {users: {100: {id: 100, description: 'foo'}}}}, []);
             store.dispatch(actions.fetchUserIfNeeded(100));
             done();
-        });
-    });
-
-    describe('receiveSongs', () => {
-        it('should create RECEIVE_SONGS action', () => {
-            const entities = {users: {1: {name: 'Ain\'t Nobody'}, 2: {name: 'Firestone'}}}
-            const songs = [1, 2];
-            const playlist = 'kygo';
-            expect(actions.receiveSongs(songs, entities, playlist)).toEqual({type: types.RECEIVE_SONGS, entities, nextUrl: null, songs, playlist});
         });
     });
 
